@@ -4,14 +4,18 @@ include 'db.php';
 
 $error = "";
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $user = $conn->real_escape_string($_POST['username']);
-    $pass = $conn->real_escape_string($_POST['password']);
+    $user = $_POST['username'];
+    $pass = $_POST['password'];
 
-    // เช็คชื่อผู้ใช้และรหัสผ่านแบบตรงๆ (ไม่ Hash) ตามความต้องการ
-    $sql = "SELECT * FROM admins WHERE username = '$user' AND password = '$pass'";
-    $result = $conn->query($sql);
+    // ใช้ Prepared Statement ของ PDO เพื่อความปลอดภัย
+    $stmt = $conn->prepare("SELECT * FROM admins WHERE username = :username AND password = :password");
+    $stmt->execute([
+        'username' => $user,
+        'password' => $pass
+    ]);
+    $admin = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if ($result->num_rows == 1) {
+    if ($admin) {
         $_SESSION['admin_logged'] = true;
         $_SESSION['admin_user'] = $user;
         header("Location: dashboard.php");
