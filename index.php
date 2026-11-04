@@ -22,7 +22,7 @@ if (!$course) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><= htmlspecialchars($course['course_code']); ?> <?= htmlspecialchars($course['course_name']); ?></title>
+    <title><?= htmlspecialchars($course['course_code']); ?> <?= htmlspecialchars($course['course_name']); ?></title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Google Fonts: Prompt -->
@@ -74,7 +74,7 @@ if (!$course) {
 
         <div class="accordion" id="lessonAccordion">
             <?php 
-            $lessons_stmt = $conn->query("SELECT * FROM lessons WHERE is_visible = 1 ORDER BY sort_order ASC, lesson_id ASC");
+            $lessons_stmt = $conn->query("SELECT * FROM lessons WHERE is_visible = true ORDER BY sort_order ASC, lesson_id ASC");
             $lessons = $lessons_stmt ? $lessons_stmt->fetchAll(PDO::FETCH_ASSOC) : [];
             if (count($lessons) > 0):
                 $index = 0;
@@ -96,7 +96,7 @@ if (!$course) {
                         <!-- ส่วนประกาศ -->
                         <div class="mb-3">
                             <?php 
-                            $ann_stmt = $conn->query("SELECT * FROM announcements WHERE lesson_id = $lesson_id AND is_visible = 1 ORDER BY sort_order ASC, announcement_id DESC");
+                            $ann_stmt = $conn->query("SELECT * FROM announcements WHERE lesson_id = $lesson_id AND is_visible = true ORDER BY sort_order ASC, announcement_id DESC");
                             $announcements = $ann_stmt ? $ann_stmt->fetchAll(PDO::FETCH_ASSOC) : [];
                             foreach($announcements as $ann):
                             ?>
@@ -116,7 +116,7 @@ if (!$course) {
                                 <div class="p-3 border rounded bg-light h-100">
                                     <span class="d-block fw-bold text-secondary mb-2 small text-uppercase">Slide & Video</span>
                                     <?php 
-                                    $m_slide_stmt = $conn->query("SELECT * FROM lesson_materials WHERE lesson_id = $lesson_id AND category = 'slide_video' AND is_visible = 1");
+                                    $m_slide_stmt = $conn->query("SELECT * FROM lesson_materials WHERE lesson_id = $lesson_id AND category = 'slide_video' AND is_visible = true");
                                     $slides = $m_slide_stmt ? $m_slide_stmt->fetchAll(PDO::FETCH_ASSOC) : [];
                                     if (count($slides) > 0):
                                         foreach($slides as $s):
@@ -136,7 +136,7 @@ if (!$course) {
                                 <div class="p-3 border rounded bg-light h-100">
                                     <span class="d-block fw-bold text-secondary mb-2 small text-uppercase">Reading</span>
                                     <?php 
-                                    $m_read_stmt = $conn->query("SELECT * FROM lesson_materials WHERE lesson_id = $lesson_id AND category = 'reading' AND is_visible = 1");
+                                    $m_read_stmt = $conn->query("SELECT * FROM lesson_materials WHERE lesson_id = $lesson_id AND category = 'reading' AND is_visible = true");
                                     $readings = $m_read_stmt ? $m_read_stmt->fetchAll(PDO::FETCH_ASSOC) : [];
                                     if (count($readings) > 0):
                                         foreach($readings as $r):
@@ -156,7 +156,7 @@ if (!$course) {
                                 <div class="p-3 border rounded bg-light h-100">
                                     <span class="d-block fw-bold text-secondary mb-2 small text-uppercase">Animation</span>
                                     <?php 
-                                    $m_anim_stmt = $conn->query("SELECT * FROM lesson_materials WHERE lesson_id = $lesson_id AND category = 'animation' AND is_visible = 1");
+                                    $m_anim_stmt = $conn->query("SELECT * FROM lesson_materials WHERE lesson_id = $lesson_id AND category = 'animation' AND is_visible = true");
                                     $animations = $m_anim_stmt ? $m_anim_stmt->fetchAll(PDO::FETCH_ASSOC) : [];
                                     if (count($animations) > 0):
                                         foreach($animations as $a):
