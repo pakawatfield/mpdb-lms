@@ -2,8 +2,8 @@
 include 'db.php';
 
 // ดึงข้อมูลหลักของรายวิชา
-$course_result = $conn->query("SELECT * FROM courses LIMIT 1");
-$course = $course_result->fetch_assoc();
+$course_stmt = $conn->query("SELECT * FROM courses LIMIT 1");
+$course = $course_stmt ? $course_stmt->fetch(PDO::FETCH_ASSOC) : false;
 
 if (!$course) {
     $course = [
@@ -22,7 +22,7 @@ if (!$course) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $course['course_code']; ?> <?= $course['course_name']; ?></title>
+    <title><= htmlspecialchars($course['course_code']); ?> <?= htmlspecialchars($course['course_name']); ?></title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Google Fonts: Prompt -->
@@ -51,21 +51,21 @@ if (!$course) {
 
     <div class="header-banner">
         <div class="container">
-            <h1 class="fs-3 fs-md-2"><?= $course['course_code']; ?> <?= $course['course_name']; ?></h1>
+            <h1 class="fs-3 fs-md-2"><?= htmlspecialchars($course['course_code']); ?> <?= htmlspecialchars($course['course_name']); ?></h1>
         </div>
     </div>
 
     <div class="container my-4">
-        <p><strong>Prerequisite :</strong> <?= $course['prerequisite']; ?></p>
-        <p><strong>Lecturer:</strong> <?= $course['lecturer']; ?></p>
-        <p><strong>Room:</strong> <?= $course['room']; ?></p>
+        <p><strong>Prerequisite :</strong> <?= htmlspecialchars($course['prerequisite']); ?></p>
+        <p><strong>Lecturer:</strong> <?= htmlspecialchars($course['lecturer']); ?></p>
+        <p><strong>Room:</strong> <?= htmlspecialchars($course['room']); ?></p>
 
         <h4 class="mt-4">Course Description</h4>
-        <p class="text-secondary"><?= $course['course_description']; ?></p>
+        <p class="text-secondary"><?= htmlspecialchars($course['course_description']); ?></p>
 
         <h4 class="mt-4">Grade</h4>
         <ul>
-            <li><?= $course['grading_policy']; ?></li>
+            <li><?= htmlspecialchars($course['grading_policy']); ?></li>
         </ul>
 
         <div class="section-banner">
@@ -74,10 +74,11 @@ if (!$course) {
 
         <div class="accordion" id="lessonAccordion">
             <?php 
-            $lessons = $conn->query("SELECT * FROM lessons WHERE is_visible = 1 ORDER BY sort_order ASC, lesson_id ASC");
-            if ($lessons && $lessons->num_rows > 0):
+            $lessons_stmt = $conn->query("SELECT * FROM lessons WHERE is_visible = 1 ORDER BY sort_order ASC, lesson_id ASC");
+            $lessons = $lessons_stmt ? $lessons_stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+            if (count($lessons) > 0):
                 $index = 0;
-                while($row = $lessons->fetch_assoc()):
+                foreach($lessons as $row):
                     $lesson_id = $row['lesson_id'];
                     $index++;
                     $is_expanded = ($index == 1) ? 'true' : 'false';
@@ -86,41 +87,43 @@ if (!$course) {
             <div class="accordion-item mb-3 shadow-sm border rounded">
                 <h2 class="accordion-header" id="heading<?= $lesson_id; ?>">
                     <button class="accordion-button <?= ($index != 1) ? 'collapsed' : ''; ?> fs-6 fs-md-5" type="button" data-bs-toggle="collapse" data-bs-target="#collapse<?= $lesson_id; ?>" aria-expanded="<?= $is_expanded; ?>" aria-controls="collapse<?= $lesson_id; ?>">
-                        <?= $row['week_no']; ?> : <?= $row['subject_title']; ?>
+                        <?= htmlspecialchars($row['week_no']); ?> : <?= htmlspecialchars($row['subject_title']); ?>
                     </button>
                 </h2>
                 <div id="collapse<?= $lesson_id; ?>" class="accordion-collapse collapse <?= $is_show; ?>" aria-labelledby="heading<?= $lesson_id; ?>" data-bs-parent="#lessonAccordion">
                     <div class="accordion-body bg-white">
                         
-                        <!-- ส่วนประกาศ (เรียงตาม sort_order และแสดงเฉพาะที่เปิดใช้งาน) -->
+                        <!-- ส่วนประกาศ -->
                         <div class="mb-3">
                             <?php 
-                            $ann_query = $conn->query("SELECT * FROM announcements WHERE lesson_id = $lesson_id AND is_visible = 1 ORDER BY sort_order ASC, announcement_id DESC");
-                            while($ann = $ann_query->fetch_assoc()):
+                            $ann_stmt = $conn->query("SELECT * FROM announcements WHERE lesson_id = $lesson_id AND is_visible = 1 ORDER BY sort_order ASC, announcement_id DESC");
+                            $announcements = $ann_stmt ? $ann_stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+                            foreach($announcements as $ann):
                             ?>
                                 <div class="p-3 mb-2 rounded border bg-light">
                                     <?php if (!empty($ann['title'])): ?>
-                                        <h6 class="text-danger mb-2"><?= $ann['title']; ?></h6>
+                                        <h6 class="text-danger mb-2"><?= htmlspecialchars($ann['title']); ?></h6>
                                     <?php endif; ?>
                                     <div class="text-dark"><?= $ann['content']; ?></div>
                                 </div>
-                            <?php endwhile; ?>
+                            <?php endforeach; ?>
                         </div>
 
-                        <!-- ส่วนแสดงลิงก์สื่อการสอน (แสดงเฉพาะที่เปิด is_visible = 1) -->
+                        <!-- ส่วนแสดงลิงก์สื่อการสอน -->
                         <div class="row g-3">
                             <!-- Slide & Video -->
                             <div class="col-md-4">
                                 <div class="p-3 border rounded bg-light h-100">
                                     <span class="d-block fw-bold text-secondary mb-2 small text-uppercase">Slide & Video</span>
                                     <?php 
-                                    $m_slide = $conn->query("SELECT * FROM lesson_materials WHERE lesson_id = $lesson_id AND category = 'slide_video' AND is_visible = 1");
-                                    if ($m_slide->num_rows > 0):
-                                        while($s = $m_slide->fetch_assoc()):
+                                    $m_slide_stmt = $conn->query("SELECT * FROM lesson_materials WHERE lesson_id = $lesson_id AND category = 'slide_video' AND is_visible = 1");
+                                    $slides = $m_slide_stmt ? $m_slide_stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+                                    if (count($slides) > 0):
+                                        foreach($slides as $s):
                                     ?>
-                                        <a href="<?= $s['url']; ?>" target="_blank" class="d-block mb-1"><?= $s['title']; ?></a>
+                                        <a href="<?= htmlspecialchars($s['url']); ?>" target="_blank" class="d-block mb-1"><?= htmlspecialchars($s['title']); ?></a>
                                     <?php 
-                                        endwhile;
+                                        endforeach;
                                     else:
                                     ?>
                                         <span class="text-muted small">ไม่มีข้อมูล</span>
@@ -133,13 +136,14 @@ if (!$course) {
                                 <div class="p-3 border rounded bg-light h-100">
                                     <span class="d-block fw-bold text-secondary mb-2 small text-uppercase">Reading</span>
                                     <?php 
-                                    $m_read = $conn->query("SELECT * FROM lesson_materials WHERE lesson_id = $lesson_id AND category = 'reading' AND is_visible = 1");
-                                    if ($m_read->num_rows > 0):
-                                        while($r = $m_read->fetch_assoc()):
+                                    $m_read_stmt = $conn->query("SELECT * FROM lesson_materials WHERE lesson_id = $lesson_id AND category = 'reading' AND is_visible = 1");
+                                    $readings = $m_read_stmt ? $m_read_stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+                                    if (count($readings) > 0):
+                                        foreach($readings as $r):
                                     ?>
-                                        <a href="<?= $r['url']; ?>" target="_blank" class="d-block mb-1"><?= $r['title']; ?></a>
+                                        <a href="<?= htmlspecialchars($r['url']); ?>" target="_blank" class="d-block mb-1"><?= htmlspecialchars($r['title']); ?></a>
                                     <?php 
-                                        endwhile;
+                                        endforeach;
                                     else:
                                     ?>
                                         <span class="text-muted small">ไม่มีข้อมูล</span>
@@ -152,13 +156,14 @@ if (!$course) {
                                 <div class="p-3 border rounded bg-light h-100">
                                     <span class="d-block fw-bold text-secondary mb-2 small text-uppercase">Animation</span>
                                     <?php 
-                                    $m_anim = $conn->query("SELECT * FROM lesson_materials WHERE lesson_id = $lesson_id AND category = 'animation' AND is_visible = 1");
-                                    if ($m_anim->num_rows > 0):
-                                        while($a = $m_anim->fetch_assoc()):
+                                    $m_anim_stmt = $conn->query("SELECT * FROM lesson_materials WHERE lesson_id = $lesson_id AND category = 'animation' AND is_visible = 1");
+                                    $animations = $m_anim_stmt ? $m_anim_stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+                                    if (count($animations) > 0):
+                                        foreach($animations as $a):
                                     ?>
-                                        <a href="<?= $a['url']; ?>" target="_blank" class="d-block mb-1"><?= $a['title']; ?></a>
+                                        <a href="<?= htmlspecialchars($a['url']); ?>" target="_blank" class="d-block mb-1"><?= htmlspecialchars($a['title']); ?></a>
                                     <?php 
-                                        endwhile;
+                                        endforeach;
                                     else:
                                     ?>
                                         <span class="text-muted small">ไม่มีข้อมูล</span>
@@ -171,7 +176,7 @@ if (!$course) {
                 </div>
             </div>
             <?php 
-                endwhile; 
+                endforeach; 
             else:
             ?>
             <div class="text-center text-muted py-4 card p-4">ยังไม่มีข้อมูลบทเรียนในระบบ หรือบทเรียนทั้งหมดถูกซ่อนไว้</div>
