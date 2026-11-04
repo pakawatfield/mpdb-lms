@@ -1,10 +1,10 @@
 <?php
 // ข้อมูลการเชื่อมต่อ Supabase PostgreSQL
-$host = "db.nsnaewdbpzdhwpasrqgf.supabase.co"; // โฮสต์จาก Supabase ของคุณ
+$host = "db.nsnaewdbpzdhwpasrqqf.supabase.co"; // โฮสต์จาก Supabase ของคุณ
 $port = "5432";                                 // พอร์ตมาตรฐานของ PostgreSQL
 $dbname = "postgres";                           // ชื่อฐานข้อมูลหลักของ Supabase
 $user = "postgres";                             // ชื่อผู้ใช้เริ่มต้น
-$password = "ใส่รหัสผ่านฐานข้อมูลของคุณที่นี่";       // รหัสผ่านที่คุณตั้งไว้ตอนสร้างโปรเจกต์ Supabase
+$password = "kimgeonwoo01";       // รหัสผ่านที่คุณตั้งไว้ตอนสร้างโปรเจกต์ Supabase
 
 try {
     // เชื่อมต่อด้วย PDO สำหรับ PostgreSQL พร้อมบังคับใช้ SSL
