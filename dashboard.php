@@ -9,10 +9,15 @@ include 'db.php';
 // 1. จัดการเพิ่มสัปดาห์ใหม่
 if (isset($_POST['add_lesson'])) {
     $course_id = 1; 
-    $week_no = $conn->real_escape_string($_POST['week_no']);
-    $subject_title = $conn->real_escape_string($_POST['subject_title']);
+    $week_no = $_POST['week_no'];
+    $subject_title = $_POST['subject_title'];
     
-    $conn->query("INSERT INTO lessons (course_id, week_no, subject_title, sort_order, is_visible) VALUES ($course_id, '$week_no', '$subject_title', 0, 1)");
+    $stmt = $conn->prepare("INSERT INTO lessons (course_id, week_no, subject_title, sort_order, is_visible) VALUES (:course_id, :week_no, :subject_title, 0, true)");
+    $stmt->execute([
+        'course_id' => $course_id,
+        'week_no' => $week_no,
+        'subject_title' => $subject_title
+    ]);
     header("Location: dashboard.php");
     exit();
 }
@@ -20,11 +25,17 @@ if (isset($_POST['add_lesson'])) {
 // 2. จัดการเพิ่มลิงก์สื่อการสอน
 if (isset($_POST['add_material'])) {
     $lesson_id = intval($_POST['lesson_id']);
-    $category = $conn->real_escape_string($_POST['category']);
-    $title = $conn->real_escape_string($_POST['title']);
-    $url = $conn->real_escape_string($_POST['url']);
+    $category = $_POST['category'];
+    $title = $_POST['title'];
+    $url = $_POST['url'];
     
-    $conn->query("INSERT INTO lesson_materials (lesson_id, category, title, url, is_visible) VALUES ($lesson_id, '$category', '$title', '$url', 1)");
+    $stmt = $conn->prepare("INSERT INTO lesson_materials (lesson_id, category, title, url, is_visible) VALUES (:lesson_id, :category, :title, :url, true)");
+    $stmt->execute([
+        'lesson_id' => $lesson_id,
+        'category' => $category,
+        'title' => $title,
+        'url' => $url
+    ]);
     header("Location: dashboard.php");
     exit();
 }
@@ -32,10 +43,15 @@ if (isset($_POST['add_material'])) {
 // 3. จัดการเพิ่มประกาศ
 if (isset($_POST['add_announcement'])) {
     $lesson_id = intval($_POST['lesson_id']);
-    $title = $conn->real_escape_string($_POST['title']);
-    $content = $conn->real_escape_string($_POST['content']);
+    $title = $_POST['title'];
+    $content = $_POST['content'];
     
-    $conn->query("INSERT INTO announcements (lesson_id, title, content, sort_order, is_visible) VALUES ($lesson_id, '$title', '$content', 0, 1)");
+    $stmt = $conn->prepare("INSERT INTO announcements (lesson_id, title, content, sort_order, is_visible) VALUES (:lesson_id, :title, :content, 0, true)");
+    $stmt->execute([
+        'lesson_id' => $lesson_id,
+        'title' => $title,
+        'content' => $content
+    ]);
     header("Location: dashboard.php");
     exit();
 }
@@ -46,8 +62,12 @@ if (isset($_GET['move_up'])) {
     $current_order = intval($_GET['order']);
     $prev_order = $current_order - 1;
     
-    $conn->query("UPDATE lessons SET sort_order = $current_order WHERE sort_order = $prev_order AND course_id = 1");
-    $conn->query("UPDATE lessons SET sort_order = $prev_order WHERE lesson_id = $id");
+    $stmt = $conn->prepare("UPDATE lessons SET sort_order = :current_order WHERE sort_order = :prev_order AND course_id = 1");
+    $stmt->execute(['current_order' => $current_order, 'prev_order' => $prev_order]);
+
+    $stmt2 = $conn->prepare("UPDATE lessons SET sort_order = :prev_order WHERE lesson_id = :id");
+    $stmt2->execute(['prev_order' => $prev_order, 'id' => $id]);
+
     header("Location: dashboard.php");
     exit();
 }
@@ -56,8 +76,12 @@ if (isset($_GET['move_down'])) {
     $current_order = intval($_GET['order']);
     $next_order = $current_order + 1;
     
-    $conn->query("UPDATE lessons SET sort_order = $current_order WHERE sort_order = $next_order AND course_id = 1");
-    $conn->query("UPDATE lessons SET sort_order = $next_order WHERE lesson_id = $id");
+    $stmt = $conn->prepare("UPDATE lessons SET sort_order = :current_order WHERE sort_order = :next_order AND course_id = 1");
+    $stmt->execute(['current_order' => $current_order, 'next_order' => $next_order]);
+
+    $stmt2 = $conn->prepare("UPDATE lessons SET sort_order = :next_order WHERE lesson_id = :id");
+    $stmt2->execute(['next_order' => $next_order, 'id' => $id]);
+
     header("Location: dashboard.php");
     exit();
 }
@@ -69,8 +93,12 @@ if (isset($_GET['move_up_ann'])) {
     $prev_order = $current_order - 1;
     $lesson_id = intval($_GET['lesson_id']);
     
-    $conn->query("UPDATE announcements SET sort_order = $current_order WHERE sort_order = $prev_order AND lesson_id = $lesson_id");
-    $conn->query("UPDATE announcements SET sort_order = $prev_order WHERE announcement_id = $id");
+    $stmt = $conn->prepare("UPDATE announcements SET sort_order = :current_order WHERE sort_order = :prev_order AND lesson_id = :lesson_id");
+    $stmt->execute(['current_order' => $current_order, 'prev_order' => $prev_order, 'lesson_id' => $lesson_id]);
+
+    $stmt2 = $conn->prepare("UPDATE announcements SET sort_order = :prev_order WHERE announcement_id = :id");
+    $stmt2->execute(['prev_order' => $prev_order, 'id' => $id]);
+
     header("Location: dashboard.php");
     exit();
 }
@@ -80,8 +108,12 @@ if (isset($_GET['move_down_ann'])) {
     $next_order = $current_order + 1;
     $lesson_id = intval($_GET['lesson_id']);
     
-    $conn->query("UPDATE announcements SET sort_order = $current_order WHERE sort_order = $next_order AND lesson_id = $lesson_id");
-    $conn->query("UPDATE announcements SET sort_order = $next_order WHERE announcement_id = $id");
+    $stmt = $conn->prepare("UPDATE announcements SET sort_order = :current_order WHERE sort_order = :next_order AND lesson_id = :lesson_id");
+    $stmt->execute(['current_order' => $current_order, 'next_order' => $next_order, 'lesson_id' => $lesson_id]);
+
+    $stmt2 = $conn->prepare("UPDATE announcements SET sort_order = :next_order WHERE announcement_id = :id");
+    $stmt2->execute(['next_order' => $next_order, 'id' => $id]);
+
     header("Location: dashboard.php");
     exit();
 }
@@ -89,39 +121,58 @@ if (isset($_GET['move_down_ann'])) {
 // จัดการสลับสถานะ ซ่อน/แสดง
 if (isset($_GET['toggle_lesson'])) {
     $id = intval($_GET['toggle_lesson']);
-    $status = intval($_GET['status']);
-    $conn->query("UPDATE lessons SET is_visible = " . ($status == 1 ? 0 : 1) . " WHERE lesson_id = $id");
+    // เนื่องจาก PostgreSQL ใช้ boolean (true/false) เราจะสลับค่าตามสถานะปัจจุบัน
+    $stmt_check = $conn->prepare("SELECT is_visible FROM lessons WHERE lesson_id = :id");
+    $stmt_check->execute(['id' => $id]);
+    $current_status = $stmt_check->fetchColumn();
+    
+    $new_status = ($current_status ? 'false' : 'true');
+    $stmt = $conn->prepare("UPDATE lessons SET is_visible = $new_status WHERE lesson_id = :id");
+    $stmt->execute(['id' => $id]);
     header("Location: dashboard.php");
     exit();
 }
 if (isset($_GET['toggle_announcement'])) {
     $id = intval($_GET['toggle_announcement']);
-    $status = intval($_GET['status']);
-    $conn->query("UPDATE announcements SET is_visible = " . ($status == 1 ? 0 : 1) . " WHERE announcement_id = $id");
+    $stmt_check = $conn->prepare("SELECT is_visible FROM announcements WHERE announcement_id = :id");
+    $stmt_check->execute(['id' => $id]);
+    $current_status = $stmt_check->fetchColumn();
+
+    $new_status = ($current_status ? 'false' : 'true');
+    $stmt = $conn->prepare("UPDATE announcements SET is_visible = $new_status WHERE announcement_id = :id");
+    $stmt->execute(['id' => $id]);
     header("Location: dashboard.php");
     exit();
 }
 if (isset($_GET['toggle_material'])) {
     $id = intval($_GET['toggle_material']);
-    $status = intval($_GET['status']);
-    $conn->query("UPDATE lesson_materials SET is_visible = " . ($status == 1 ? 0 : 1) . " WHERE material_id = $id");
+    $stmt_check = $conn->prepare("SELECT is_visible FROM lesson_materials WHERE material_id = :id");
+    $stmt_check->execute(['id' => $id]);
+    $current_status = $stmt_check->fetchColumn();
+
+    $new_status = ($current_status ? 'false' : 'true');
+    $stmt = $conn->prepare("UPDATE lesson_materials SET is_visible = $new_status WHERE material_id = :id");
+    $stmt->execute(['id' => $id]);
     header("Location: dashboard.php");
     exit();
 }
 
 // จัดการลบข้อมูล
 if (isset($_GET['del_lesson'])) {
-    $conn->query("DELETE FROM lessons WHERE lesson_id = " . intval($_GET['del_lesson']));
+    $stmt = $conn->prepare("DELETE FROM lessons WHERE lesson_id = :id");
+    $stmt->execute(['id' => intval($_GET['del_lesson'])]);
     header("Location: dashboard.php");
     exit();
 }
 if (isset($_GET['del_material'])) {
-    $conn->query("DELETE FROM lesson_materials WHERE material_id = " . intval($_GET['del_material']));
+    $stmt = $conn->prepare("DELETE FROM lesson_materials WHERE material_id = :id");
+    $stmt->execute(['id' => intval($_GET['del_material'])]);
     header("Location: dashboard.php");
     exit();
 }
 if (isset($_GET['del_announcement'])) {
-    $conn->query("DELETE FROM announcements WHERE announcement_id = " . intval($_GET['del_announcement']));
+    $stmt = $conn->prepare("DELETE FROM announcements WHERE announcement_id = :id");
+    $stmt->execute(['id' => intval($_GET['del_announcement'])]);
     header("Location: dashboard.php");
     exit();
 }
@@ -157,7 +208,7 @@ if (isset($_GET['del_announcement'])) {
 
     <div class="container my-4">
         
-        <!-- แผงปุ่มเปิดฟอร์ม (Accordion Buttons) เพื่อไม่ให้หน้ายาวเกินไป -->
+        <!-- แผงปุ่มเปิดฟอร์ม (Accordion Buttons) -->
         <div class="row g-3 mb-4">
             <div class="col-md-4">
                 <button class="btn btn-primary w-100 py-3 text-start shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#formLesson">
@@ -176,7 +227,7 @@ if (isset($_GET['del_announcement'])) {
             </div>
         </div>
 
-        <!-- 1. ฟอร์มเพิ่มสัปดาห์ (ซ่อนไว้กดเปิด) -->
+        <!-- 1. ฟอร์มเพิ่มสัปดาห์ -->
         <div class="collapse mb-4" id="formLesson">
             <div class="card border-primary">
                 <div class="card-header bg-primary text-white">เพิ่มหัวข้อสัปดาห์เรียนใหม่</div>
@@ -198,7 +249,7 @@ if (isset($_GET['del_announcement'])) {
             </div>
         </div>
 
-        <!-- 2. ฟอร์มเพิ่มลิงก์สื่อ (ซ่อนไว้กดเปิด) -->
+        <!-- 2. ฟอร์มเพิ่มลิงก์สื่อ -->
         <div class="collapse mb-4" id="formMaterial">
             <div class="card border-secondary">
                 <div class="card-header bg-secondary text-white">เพิ่มลิงก์สไลด์ / วิดีโอ / เอกสารอ่าน</div>
@@ -209,11 +260,12 @@ if (isset($_GET['del_announcement'])) {
                             <select name="lesson_id" class="form-control" required>
                                 <option value="">-- เลือกบทเรียน --</option>
                                 <?php 
-                                $lessons_opt1 = $conn->query("SELECT * FROM lessons ORDER BY sort_order ASC");
-                                while($l = $lessons_opt1->fetch_assoc()): 
+                                $lessons_opt1_stmt = $conn->query("SELECT * FROM lessons ORDER BY sort_order ASC");
+                                $lessons_opt1 = $lessons_opt1_stmt->fetchAll(PDO::FETCH_ASSOC);
+                                foreach($lessons_opt1 as $l): 
                                 ?>
-                                    <option value="<?= $l['lesson_id']; ?>"><?= $l['week_no']; ?>: <?= $l['subject_title']; ?></option>
-                                <?php endwhile; ?>
+                                    <option value="<?= $l['lesson_id']; ?>"><?= htmlspecialchars($l['week_no']); ?>: <?= htmlspecialchars($l['subject_title']); ?></option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="col-md-2">
@@ -240,7 +292,7 @@ if (isset($_GET['del_announcement'])) {
             </div>
         </div>
 
-        <!-- 3. ฟอร์มเพิ่มประกาศ (ซ่อนไว้กดเปิด) -->
+        <!-- 3. ฟอร์มเพิ่มประกาศ -->
         <div class="collapse mb-4" id="formAnnouncement">
             <div class="card border-warning">
                 <div class="card-header bg-warning text-dark fw-bold">โพสต์ข้อความประกาศประจำสัปดาห์</div>
@@ -252,11 +304,12 @@ if (isset($_GET['del_announcement'])) {
                                 <select name="lesson_id" class="form-control" required>
                                     <option value="">-- เลือกบทเรียน --</option>
                                     <?php 
-                                    $lessons_opt2 = $conn->query("SELECT * FROM lessons ORDER BY sort_order ASC");
-                                    while($l2 = $lessons_opt2->fetch_assoc()): 
+                                    $lessons_opt2_stmt = $conn->query("SELECT * FROM lessons ORDER BY sort_order ASC");
+                                    $lessons_opt2 = $lessons_opt2_stmt->fetchAll(PDO::FETCH_ASSOC);
+                                    foreach($lessons_opt2 as $l2): 
                                     ?>
-                                        <option value="<?= $l2['lesson_id']; ?>"><?= $l2['week_no']; ?>: <?= $l2['subject_title']; ?></option>
-                                    <?php endwhile; ?>
+                                        <option value="<?= $l2['lesson_id']; ?>"><?= htmlspecialchars($l2['week_no']); ?>: <?= htmlspecialchars($l2['subject_title']); ?></option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                             <div class="col-md-8">
@@ -274,21 +327,22 @@ if (isset($_GET['del_announcement'])) {
             </div>
         </div>
 
-        <!-- รายการเนื้อหาทั้งหมด (จัดระเบียบใหม่ให้สะอาดตา) -->
+        <!-- รายการเนื้อหาทั้งหมด -->
         <div class="card shadow-sm">
             <div class="card-header bg-white py-3">
                 <h5 class="m-0 fw-bold text-dark"><i class="fa-solid fa-list-check me-2"></i> จัดการเนื้อหาบทเรียนทั้งหมด</h5>
             </div>
             <div class="card-body p-3">
                 <?php 
-                $lessons_list = $conn->query("SELECT * FROM lessons ORDER BY sort_order ASC, lesson_id ASC");
-                if ($lessons_list->num_rows > 0):
-                    while($row = $lessons_list->fetch_assoc()): 
+                $lessons_list_stmt = $conn->query("SELECT * FROM lessons ORDER BY sort_order ASC, lesson_id ASC");
+                $lessons_list = $lessons_list_stmt->fetchAll(PDO::FETCH_ASSOC);
+                if (count($lessons_list) > 0):
+                    foreach($lessons_list as $row): 
                         $lid = $row['lesson_id'];
-                        $is_visible = $row['is_visible'];
+                        $is_visible = $row['is_visible']; // ใน PDO/PostgreSQL มักจะเป็นค่า boolean (true/false)
                         $sort_order = $row['sort_order'];
                 ?>
-                    <div class="card border mb-3 <?= ($is_visible == 0) ? 'bg-light opacity-75' : 'bg-white'; ?>">
+                    <div class="card border mb-3 <?= (!$is_visible) ? 'bg-light opacity-75' : 'bg-white'; ?>">
                         <div class="card-body p-3">
                             <!-- แถวหัวข้อสัปดาห์ -->
                             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2 pb-2 border-bottom">
@@ -297,8 +351,8 @@ if (isset($_GET['del_announcement'])) {
                                         <a href="dashboard.php?move_up=<?= $lid; ?>&order=<?= $sort_order; ?>" class="btn btn-outline-secondary" title="เลื่อนขึ้น"><i class="fa-solid fa-arrow-up"></i></a>
                                         <a href="dashboard.php?move_down=<?= $lid; ?>&order=<?= $sort_order; ?>" class="btn btn-outline-secondary" title="เลื่อนลง"><i class="fa-solid fa-arrow-down"></i></a>
                                     </div>
-                                    <h5 class="m-0 fw-bold text-primary"><?= $row['week_no']; ?> : <?= $row['subject_title']; ?></h5>
-                                    <?php if ($is_visible == 1): ?>
+                                    <h5 class="m-0 fw-bold text-primary"><?= htmlspecialchars($row['week_no']); ?> : <?= htmlspecialchars($row['subject_title']); ?></h5>
+                                    <?php if ($is_visible): ?>
                                         <span class="badge bg-success">แสดง</span>
                                     <?php else: ?>
                                         <span class="badge bg-secondary">ซ่อน</span>
@@ -306,8 +360,8 @@ if (isset($_GET['del_announcement'])) {
                                 </div>
                                 <div class="btn-group btn-group-sm">
                                     <a href="edit.php?type=lesson&id=<?= $lid; ?>" class="btn btn-outline-primary"><i class="fa-solid fa-pen"></i> แก้ไข</a>
-                                    <a href="dashboard.php?toggle_lesson=<?= $lid; ?>&status=<?= $is_visible; ?>" class="btn btn-outline-secondary">
-                                        <?= ($is_visible == 1) ? '<i class="fa-solid fa-eye-slash"></i> ซ่อน' : '<i class="fa-solid fa-eye"></i> แสดง'; ?>
+                                    <a href="dashboard.php?toggle_lesson=<?= $lid; ?>&status=<?= $is_visible ? 1 : 0; ?>" class="btn btn-outline-secondary">
+                                        <?= ($is_visible) ? '<i class="fa-solid fa-eye-slash"></i> ซ่อน' : '<i class="fa-solid fa-eye"></i> แสดง'; ?>
                                     </a>
                                     <a href="dashboard.php?del_lesson=<?= $lid; ?>" class="btn btn-outline-danger" onclick="return confirm('ลบสัปดาห์นี้ทั้งหมด?')"><i class="fa-solid fa-trash"></i> ลบ</a>
                                 </div>
@@ -317,33 +371,34 @@ if (isset($_GET['del_announcement'])) {
                             <div class="mb-2 ps-2">
                                 <span class="text-muted small fw-bold"><i class="fa-solid fa-bullhorn me-1"></i> ประกาศ:</span>
                                 <?php 
-                                $ann_list = $conn->query("SELECT * FROM announcements WHERE lesson_id = $lid ORDER BY sort_order ASC, announcement_id DESC");
-                                if ($ann_list->num_rows > 0):
-                                    while($ann = $ann_list->fetch_assoc()):
+                                $ann_stmt = $conn->query("SELECT * FROM announcements WHERE lesson_id = $lid ORDER BY sort_order ASC, announcement_id DESC");
+                                $ann_list = $ann_stmt->fetchAll(PDO::FETCH_ASSOC);
+                                if (count($ann_list) > 0):
+                                    foreach($ann_list as $ann):
                                         $ann_id = $ann['announcement_id'];
                                         $ann_visible = $ann['is_visible'];
                                         $ann_sort = $ann['sort_order'];
                                 ?>
-                                    <div class="p-2 mt-1 rounded border bg-light d-flex justify-content-between align-items-center small <?= ($ann_visible == 0) ? 'opacity-50' : ''; ?>">
+                                    <div class="p-2 mt-1 rounded border bg-light d-flex justify-content-between align-items-center small <?= (!$ann_visible) ? 'opacity-50' : ''; ?>">
                                         <div class="d-flex align-items-center gap-2">
                                             <div class="btn-group btn-group-xs">
                                                 <a href="dashboard.php?move_up_ann=<?= $ann_id; ?>&order=<?= $ann_sort; ?>&lesson_id=<?= $lid; ?>" class="btn btn-sm btn-outline-secondary py-0 px-1"><i class="fa-solid fa-arrow-up"></i></a>
                                                 <a href="dashboard.php?move_down_ann=<?= $ann_id; ?>&order=<?= $ann_sort; ?>&lesson_id=<?= $lid; ?>" class="btn btn-sm btn-outline-secondary py-0 px-1"><i class="fa-solid fa-arrow-down"></i></a>
                                             </div>
                                             <div>
-                                                <?php if (!empty($ann['title'])): ?><strong><?= $ann['title']; ?>:</strong><?php endif; ?>
+                                                <?php if (!empty($ann['title'])): ?><strong><?= htmlspecialchars($ann['title']); ?>:</strong><?php endif; ?>
                                                 <span><?= $ann['content']; ?></span>
-                                                <?php if ($ann_visible == 0): ?><span class="badge bg-dark ms-1">ซ่อน</span><?php endif; ?>
+                                                <?php if (!$ann_visible): ?><span class="badge bg-dark ms-1">ซ่อน</span><?php endif; ?>
                                             </div>
                                         </div>
                                         <div class="btn-group btn-group-sm">
                                             <a href="edit.php?type=announcement&id=<?= $ann_id; ?>" class="btn btn-link text-primary p-0 me-2 text-decoration-none">แก้ไข</a>
-                                            <a href="dashboard.php?toggle_announcement=<?= $ann_id; ?>&status=<?= $ann_visible; ?>" class="btn btn-link text-secondary p-0 me-2 text-decoration-none"><?= ($ann_visible == 1) ? 'ซ่อน' : 'แสดง'; ?></a>
+                                            <a href="dashboard.php?toggle_announcement=<?= $ann_id; ?>&status=<?= $ann_visible ? 1 : 0; ?>" class="btn btn-link text-secondary p-0 me-2 text-decoration-none"><?= ($ann_visible) ? 'ซ่อน' : 'แสดง'; ?></a>
                                             <a href="dashboard.php?del_announcement=<?= $ann_id; ?>" class="btn btn-link text-danger p-0 text-decoration-none" onclick="return confirm('ลบประกาศนี้?')">ลบ</a>
                                         </div>
                                     </div>
                                 <?php 
-                                    endwhile;
+                                    endforeach;
                                 else:
                                 ?>
                                     <span class="text-muted small ms-2">ไม่มีประกาศ</span>
@@ -355,24 +410,25 @@ if (isset($_GET['del_announcement'])) {
                                 <span class="text-muted small fw-bold"><i class="fa-solid fa-link me-1"></i> ลิงก์สื่อ:</span>
                                 <div class="d-flex flex-wrap gap-2 mt-1">
                                     <?php 
-                                    $materials = $conn->query("SELECT * FROM lesson_materials WHERE lesson_id = $lid");
-                                    if ($materials->num_rows > 0):
-                                        while($m = $materials->fetch_assoc()):
+                                    $mat_stmt = $conn->query("SELECT * FROM lesson_materials WHERE lesson_id = $lid");
+                                    $materials = $mat_stmt->fetchAll(PDO::FETCH_ASSOC);
+                                    if (count($materials) > 0):
+                                        foreach($materials as $m):
                                             $mat_id = $m['material_id'];
                                             $mat_visible = $m['is_visible'];
                                     ?>
-                                        <div class="badge bg-light text-dark border p-2 d-flex align-items-center gap-2 <?= ($mat_visible == 0) ? 'opacity-50' : ''; ?>">
-                                            <span class="badge bg-secondary"><?= $m['category']; ?></span>
-                                            <a href="<?= $m['url']; ?>" target="_blank" class="text-decoration-none text-dark"><?= $m['title']; ?></a>
-                                            <?php if ($mat_visible == 0): ?><span class="badge bg-dark">ซ่อน</span><?php endif; ?>
+                                        <div class="badge bg-light text-dark border p-2 d-flex align-items-center gap-2 <?= (!$mat_visible) ? 'opacity-50' : ''; ?>">
+                                            <span class="badge bg-secondary"><?= htmlspecialchars($m['category']); ?></span>
+                                            <a href="<?= htmlspecialchars($m['url']); ?>" target="_blank" class="text-decoration-none text-dark"><?= htmlspecialchars($m['title']); ?></a>
+                                            <?php if (!$mat_visible): ?><span class="badge bg-dark">ซ่อน</span><?php endif; ?>
                                             <div class="ms-1 border-start ps-2">
                                                 <a href="edit.php?type=material&id=<?= $mat_id; ?>" class="text-primary text-decoration-none me-1" title="แก้ไข"><i class="fa-solid fa-pen" style="font-size: 10px;"></i></a>
-                                                <a href="dashboard.php?toggle_material=<?= $mat_id; ?>&status=<?= $mat_visible; ?>" class="text-secondary text-decoration-none me-1" title="ซ่อน/แสดง"><i class="fa-solid fa-eye-slash" style="font-size: 10px;"></i></a>
+                                                <a href="dashboard.php?toggle_material=<?= $mat_id; ?>&status=<?= $mat_visible ? 1 : 0; ?>" class="text-secondary text-decoration-none me-1" title="ซ่อน/แสดง"><i class="fa-solid fa-eye-slash" style="font-size: 10px;"></i></a>
                                                 <a href="dashboard.php?del_material=<?= $mat_id; ?>" class="text-danger text-decoration-none" title="ลบ" onclick="return confirm('ลบลิงก์นี้?')"><i class="fa-solid fa-xmark"></i></a>
                                             </div>
                                         </div>
                                     <?php 
-                                        endwhile;
+                                        endforeach;
                                     else:
                                     ?>
                                         <span class="text-muted small ms-2">ยังไม่มีลิงก์สื่อการสอน</span>
@@ -383,7 +439,7 @@ if (isset($_GET['del_announcement'])) {
                         </div>
                     </div>
                 <?php 
-                    endwhile;
+                    endforeach;
                 else:
                 ?>
                     <div class="text-center text-muted py-4">ยังไม่มีข้อมูลบทเรียนในระบบ</div>
