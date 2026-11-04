@@ -1,5 +1,5 @@
 <?php
-$host = "aws-0-ap-southeast-2.pooler.supabase.com"; // โฮสต์ Connection Pooler
+$host = "aws-0-ap-southeast-2.pooler.supabase.com"; 
 $port = "6543";                                 
 $dbname = "postgres";                           
 $user = "postgres.nsnaewdbpzdhwpasrqqf";         
